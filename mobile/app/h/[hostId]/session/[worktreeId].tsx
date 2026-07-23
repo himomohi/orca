@@ -114,6 +114,7 @@ import {
   loadTerminalAccessoryLayout
 } from '../../../../src/terminal/terminal-accessory-layout'
 import { createTerminalLiveAccessoryInput } from '../../../../src/terminal/terminal-live-accessory-input'
+import { useTerminalDoubleTapTab } from '../../../../src/terminal/use-terminal-double-tap-tab'
 import { getTerminalLiveAccessoryRawSendTarget } from '../../../../src/terminal/terminal-live-accessory-raw-send-target'
 import {
   clearTerminalLiveInputFocusTimer,
@@ -896,6 +897,7 @@ export default function SessionScreen() {
   const [terminalTextScale, setTerminalTextScale] = useState(1)
   // Why: terminal command-bar autocomplete opt-in, reloaded on focus so a Settings → Terminal toggle takes effect on return.
   const [autocompleteEnabled, setAutocompleteEnabled] = useState(false)
+  const shouldSendTabForTap = useTerminalDoubleTapTab()
   const [terminalLinkOpenMode, setTerminalLinkOpenMode] =
     useState<MobileTerminalLinkOpenMode>('orca-browser')
   const [liveInputCapture, setLiveInputCapture] = useState('')
@@ -3049,7 +3051,8 @@ export default function SessionScreen() {
         () => undefined
       )
   }
-
+  const handleAccessoryKeyRef = useRef(handleAccessoryKey)
+  handleAccessoryKeyRef.current = handleAccessoryKey
   const sendLiveTerminalInput = useCallback(
     async (handle: string, bytes: string): Promise<boolean> => {
       const text = normalizeTerminalTextInput(bytes)
@@ -3170,17 +3173,17 @@ export default function SessionScreen() {
       liveInput: liveInputRef.current
     })
   }, [])
-
   const handleTerminalTap = useCallback(
     (handle: string) => {
-      if (handle !== activeHandleRef.current) {
-        return
+      if (handle === activeHandleRef.current) {
+        focusLiveInput()
+        if (shouldSendTabForTap(handle)) {
+          void handleAccessoryKeyRef.current({ bytes: '\t' })
+        }
       }
-      focusLiveInput()
     },
-    [focusLiveInput]
+    [focusLiveInput, shouldSendTabForTap]
   )
-
   // Tap a terminal file path → resolve on host, open as file tab (mirrors desktop Cmd/Ctrl-click); silent on a miss.
   const handleFileTapActivationSeqRef = useRef(0)
   const handleFileTap = useCallback(
@@ -3471,8 +3474,6 @@ export default function SessionScreen() {
   const repeatTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const repeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   // Why: ref keeps repeat firing the current callback; else a mid-hold tab switch/reconnect routes bytes to a stale terminal.
-  const handleAccessoryKeyRef = useRef(handleAccessoryKey)
-  handleAccessoryKeyRef.current = handleAccessoryKey
   const stopAccessoryRepeat = useCallback(() => {
     if (repeatTimeoutRef.current) {
       clearTimeout(repeatTimeoutRef.current)
