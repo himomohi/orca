@@ -49,7 +49,15 @@ export function dispatchTerminalWebViewNotification(
       handlers.onTerminalInput?.(bytes)
     }
   } else if (msg.type === 'terminal-tap') {
-    handlers.onTerminalTap?.()
+    const sequence =
+      typeof msg.sequence === 'number' && Number.isSafeInteger(msg.sequence) && msg.sequence > 0
+        ? msg.sequence
+        : null
+    const x = typeof msg.x === 'number' && Number.isFinite(msg.x) ? msg.x : null
+    const y = typeof msg.y === 'number' && Number.isFinite(msg.y) ? msg.y : null
+    if (sequence !== null && x !== null && y !== null) {
+      handlers.onTerminalTap?.({ sequence, x, y })
+    }
   } else if (msg.type === 'terminal-file-tap') {
     const pathText = typeof msg.pathText === 'string' ? msg.pathText : ''
     if (pathText.length > 0) {

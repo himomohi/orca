@@ -248,6 +248,45 @@ describe('terminal WebView tap routing', () => {
     expect(posted.find((m) => m.type === 'terminal-file-tap')).toBeUndefined()
   })
 
+  it('posts each plain terminal tap with its viewport origin', async () => {
+    const { posted } = boot('plain terminal output')
+    await settle()
+    const x = screenXForCol(4)
+
+    fireTouch('touchstart', [{ x, y: tapY }])
+    fireTouch('touchend', [])
+    fireTouch('touchstart', [{ x: x + 2, y: tapY + 1 }])
+    fireTouch('touchend', [])
+
+    const taps = posted.filter((message) => message.type === 'terminal-tap')
+    expect(taps).toHaveLength(2)
+    expect(taps[0]).toMatchObject({ type: 'terminal-tap', x, y: tapY })
+    expect(taps[1]).toMatchObject({ type: 'terminal-tap', x: x + 2, y: tapY + 1 })
+    expect(taps[1]?.sequence).toBe((taps[0]?.sequence as number) + 1)
+  })
+
+  it('keeps an intervening link tap visible in the gesture sequence', async () => {
+    const { posted } = boot(URL_LINE)
+    await settle()
+    const plainX = screenXForCol(1)
+
+    fireTouch('touchstart', [{ x: plainX, y: tapY }])
+    fireTouch('touchend', [])
+    fireTouch('touchstart', [{ x: tapX, y: tapY }])
+    fireTouch('touchend', [])
+    fireTouch('touchstart', [{ x: plainX, y: tapY }])
+    fireTouch('touchend', [])
+
+    const taps = posted.filter((message) => message.type === 'terminal-tap')
+    expect(taps).toHaveLength(2)
+    expect(taps[0]).toMatchObject({ type: 'terminal-tap', x: plainX, y: tapY })
+    expect(taps[1]).toMatchObject({ type: 'terminal-tap', x: plainX, y: tapY })
+    expect(taps[1]?.sequence).toBe((taps[0]?.sequence as number) + 2)
+    expect(posted.find((message) => message.type === 'open-url')?.url).toBe(
+      'https://example.com/foo'
+    )
+  })
+
   it('does not open stale snapshot OSC links after the row text changes', async () => {
     const oscLinks = [{ row: 0, startCol: 6, endCol: 11, uri: 'https://example.com/issue/1234' }]
     const { posted, setLine } = boot('issue #1234 done', oscLinks)

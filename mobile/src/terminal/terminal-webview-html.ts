@@ -1012,9 +1012,10 @@ ${TERMINAL_WEBGL_RECOVERY_JS}
   var longPressOrigin = null; // {x,y, identifier}
   // Why: tap detection is tracked separately from the long-press timer so a
   // small jitter that cancels the press-to-select timer does not also cancel
-  // the tap (which opens links/paths). {x,y,t,identifier} or null once the
-  // gesture is disqualified as a tap (moved too far or held too long).
+  // the tap (which opens links/paths). {x,y,t,identifier,sequence} or null
+  // once the gesture is disqualified as a tap (moved too far or held too long).
   var tapCandidate = null;
+  var terminalSurfaceGestureSequence = 0;
   var edgeScrollTimer = null;
   var edgeScrollDir = 0;
   var edgeScrollClientX = 0;

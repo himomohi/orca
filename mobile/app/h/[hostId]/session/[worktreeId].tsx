@@ -104,6 +104,7 @@ import {
 import type {
   TerminalKeyboardAvoidanceMetrics,
   TerminalModes,
+  TerminalSurfaceTap,
   TerminalWebViewHandle
 } from '../../../../src/terminal/terminal-webview-contract'
 import { isTerminalOscLinkRanges } from '../../../../src/terminal/terminal-osc-link-ranges'
@@ -114,7 +115,8 @@ import {
   loadTerminalAccessoryLayout
 } from '../../../../src/terminal/terminal-accessory-layout'
 import { createTerminalLiveAccessoryInput } from '../../../../src/terminal/terminal-live-accessory-input'
-import { useTerminalDoubleTapTab } from '../../../../src/terminal/use-terminal-double-tap-tab'
+import { sendDoubleTapAction } from '../../../../src/terminal/terminal-double-tap-action'
+import { useTerminalDoubleTapAction } from '../../../../src/terminal/use-terminal-double-tap-action'
 import { getTerminalLiveAccessoryRawSendTarget } from '../../../../src/terminal/terminal-live-accessory-raw-send-target'
 import {
   clearTerminalLiveInputFocusTimer,
@@ -897,7 +899,7 @@ export default function SessionScreen() {
   const [terminalTextScale, setTerminalTextScale] = useState(1)
   // Why: terminal command-bar autocomplete opt-in, reloaded on focus so a Settings → Terminal toggle takes effect on return.
   const [autocompleteEnabled, setAutocompleteEnabled] = useState(false)
-  const shouldSendTabForTap = useTerminalDoubleTapTab()
+  const resolveDoubleTap = useTerminalDoubleTapAction()
   const [terminalLinkOpenMode, setTerminalLinkOpenMode] =
     useState<MobileTerminalLinkOpenMode>('orca-browser')
   const [liveInputCapture, setLiveInputCapture] = useState('')
@@ -3174,15 +3176,13 @@ export default function SessionScreen() {
     })
   }, [])
   const handleTerminalTap = useCallback(
-    (handle: string) => {
+    (handle: string, tap: TerminalSurfaceTap) => {
       if (handle === activeHandleRef.current) {
         focusLiveInput()
-        if (shouldSendTabForTap(handle)) {
-          void handleAccessoryKeyRef.current({ bytes: '\t' })
-        }
+        sendDoubleTapAction(resolveDoubleTap(handle, tap), handleAccessoryKeyRef.current)
       }
     },
-    [focusLiveInput, shouldSendTabForTap]
+    [focusLiveInput, resolveDoubleTap]
   )
   // Tap a terminal file path → resolve on host, open as file tab (mirrors desktop Cmd/Ctrl-click); silent on a miss.
   const handleFileTapActivationSeqRef = useRef(0)

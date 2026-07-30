@@ -1,4 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import {
+  isTerminalDoubleTapActionId,
+  type TerminalDoubleTapActionId
+} from '../terminal/terminal-double-tap-action'
 
 const PINS_PREFIX = 'orca:pins:'
 const NOTIF_KEY = 'orca:pushNotificationsEnabled'
@@ -79,19 +83,29 @@ export async function saveTerminalAutocompleteEnabled(enabled: boolean): Promise
   await AsyncStorage.setItem(AUTOCOMPLETE_KEY, String(enabled))
 }
 
-const DOUBLE_TAP_TAB_KEY = 'orca:terminalDoubleTapTabEnabled'
+const DOUBLE_TAP_ACTION_KEY = 'orca:terminalDoubleTapAction'
+const LEGACY_DOUBLE_TAP_TAB_KEY = 'orca:terminalDoubleTapTabEnabled'
 
-export async function loadTerminalDoubleTapTabEnabled(): Promise<boolean> {
+export async function loadTerminalDoubleTapAction(): Promise<TerminalDoubleTapActionId> {
   try {
-    const raw = await AsyncStorage.getItem(DOUBLE_TAP_TAB_KEY)
-    return raw === 'true'
+    const raw = await AsyncStorage.getItem(DOUBLE_TAP_ACTION_KEY)
+    if (isTerminalDoubleTapActionId(raw)) {
+      return raw
+    }
+    if (raw !== null) {
+      return 'off'
+    }
+    const legacyRaw = await AsyncStorage.getItem(LEGACY_DOUBLE_TAP_TAB_KEY)
+    return legacyRaw === 'true' ? 'tab' : 'off'
   } catch {
-    return false
+    return 'off'
   }
 }
 
-export async function saveTerminalDoubleTapTabEnabled(enabled: boolean): Promise<void> {
-  await AsyncStorage.setItem(DOUBLE_TAP_TAB_KEY, String(enabled))
+export async function saveTerminalDoubleTapAction(
+  actionId: TerminalDoubleTapActionId
+): Promise<void> {
+  await AsyncStorage.setItem(DOUBLE_TAP_ACTION_KEY, actionId)
 }
 
 const TERMINAL_LIVE_INPUT_DISABLED_PREFIX = 'orca:terminalLiveInputDisabled:'

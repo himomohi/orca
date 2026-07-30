@@ -5,6 +5,7 @@ import type {
   MobileTerminalTheme,
   TerminalKeyboardAvoidanceMetrics,
   TerminalModes,
+  TerminalSurfaceTap,
   TerminalWebViewHandle
 } from '../terminal/terminal-webview-contract'
 
@@ -24,7 +25,7 @@ type TerminalPaneViewProps = {
   onHaptic: (kind: 'selection' | 'success' | 'error' | 'edge-bump') => void
   onTerminalInput: (handle: string, bytes: string) => void
   onTerminalQueryReply: (handle: string, bytes: string) => void
-  onTerminalTap: (handle: string) => void
+  onTerminalTap: (handle: string, tap: TerminalSurfaceTap) => void
   onFileTap: (handle: string, pathText: string, line: number | null, column: number | null) => void
   onOpenUrl: (handle: string, url: string) => void
   onTextScaleChange: (scale: number) => void
@@ -83,7 +84,7 @@ export function TerminalPaneView({
         onHaptic={onHaptic}
         onTerminalInput={(bytes) => onTerminalInput(handle, bytes)}
         onTerminalQueryReply={(bytes) => onTerminalQueryReply(handle, bytes)}
-        onTerminalTap={() => onTerminalTap(handle)}
+        onTerminalTap={(tap) => onTerminalTap(handle, tap)}
         onFileTap={(pathText, line, column) => onFileTap(handle, pathText, line, column)}
         onOpenUrl={(url) => onOpenUrl(handle, url)}
         onTextScaleChange={onTextScaleChange}

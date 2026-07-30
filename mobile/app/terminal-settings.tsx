@@ -18,11 +18,16 @@ import { PickerModal, type PickerOption } from '../src/components/PickerModal'
 import { TerminalShortcutSettings } from '../src/components/TerminalShortcutSettings'
 import { setTerminalAutoRestoreFitMsForHost } from '../src/terminal/terminal-auto-restore-fit-state'
 import {
+  TERMINAL_DOUBLE_TAP_ACTIONS,
+  terminalDoubleTapActionLabel,
+  type TerminalDoubleTapActionId
+} from '../src/terminal/terminal-double-tap-action'
+import {
   loadTerminalAutocompleteEnabled,
-  loadTerminalDoubleTapTabEnabled,
+  loadTerminalDoubleTapAction,
   loadTerminalTextScale,
   saveTerminalAutocompleteEnabled,
-  saveTerminalDoubleTapTabEnabled,
+  saveTerminalDoubleTapAction,
   saveTerminalTextScale
 } from '../src/storage/preferences'
 
@@ -40,6 +45,13 @@ const TEXT_SIZE_OPTIONS: (PickerOption<TextSizeValue> & { scale: number })[] = [
   { value: 'larger', label: 'Larger (150%)', scale: 1.5 },
   { value: 'largest', label: 'Largest (200%)', scale: 2 }
 ]
+
+const DOUBLE_TAP_ACTION_OPTIONS: PickerOption<TerminalDoubleTapActionId>[] =
+  TERMINAL_DOUBLE_TAP_ACTIONS.map((action) => ({
+    value: action.id,
+    label: action.label,
+    subtitle: action.description
+  }))
 
 function textSizeValueFromScale(scale: number): TextSizeValue {
   return TEXT_SIZE_OPTIONS.find((o) => o.scale === scale)?.value ?? 'default'
@@ -178,23 +190,24 @@ export default function TerminalSettingsScreen() {
     void saveTerminalAutocompleteEnabled(next)
   }, [])
 
-  const [doubleTapTabEnabled, setDoubleTapTabEnabled] = useState(false)
-  const userToggledDoubleTapTabRef = useRef(false)
+  const [doubleTapAction, setDoubleTapAction] = useState<TerminalDoubleTapActionId>('off')
+  const [doubleTapPickerOpen, setDoubleTapPickerOpen] = useState(false)
+  const userSelectedDoubleTapActionRef = useRef(false)
   useEffect(() => {
     let stale = false
-    void loadTerminalDoubleTapTabEnabled().then((enabled) => {
-      if (!stale && !userToggledDoubleTapTabRef.current) {
-        setDoubleTapTabEnabled(enabled)
+    void loadTerminalDoubleTapAction().then((actionId) => {
+      if (!stale && !userSelectedDoubleTapActionRef.current) {
+        setDoubleTapAction(actionId)
       }
     })
     return () => {
       stale = true
     }
   }, [])
-  const toggleDoubleTapTab = useCallback((next: boolean) => {
-    userToggledDoubleTapTabRef.current = true
-    setDoubleTapTabEnabled(next)
-    void saveTerminalDoubleTapTabEnabled(next)
+  const selectDoubleTapAction = useCallback((actionId: TerminalDoubleTapActionId) => {
+    userSelectedDoubleTapActionRef.current = true
+    setDoubleTapAction(actionId)
+    void saveTerminalDoubleTapAction(actionId)
   }, [])
 
   useEffect(() => {
@@ -367,21 +380,30 @@ export default function TerminalSettingsScreen() {
               thumbColor={colors.textPrimary}
             />
           </View>
-          <View style={styles.separator} />
-          <View style={styles.row}>
+        </View>
+
+        <Text style={[styles.groupHeading, styles.inputGroupGap]}>GESTURES</Text>
+        <Text style={styles.groupDescription}>
+          Choose what two nearby taps on terminal content send. Links, file paths, selection,
+          scrolling, and terminal mouse input keep their normal behavior.
+        </Text>
+        <View style={[styles.section, styles.sectionTopGap]}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Double-tap in terminal"
+            accessibilityValue={{ text: terminalDoubleTapActionLabel(doubleTapAction) }}
+            accessibilityHint="Opens double-tap action options"
+            style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+            onPress={() => setDoubleTapPickerOpen(true)}
+          >
             <View style={styles.rowContent}>
-              <Text style={styles.rowLabel}>Double-tap sends Tab</Text>
+              <Text style={styles.rowLabel}>Double tap</Text>
               <Text style={styles.rowSublabel}>
-                {doubleTapTabEnabled ? 'On' : 'Off'} · Empty terminal space only
+                {terminalDoubleTapActionLabel(doubleTapAction)}
               </Text>
             </View>
-            <Switch
-              value={doubleTapTabEnabled}
-              onValueChange={toggleDoubleTapTab}
-              trackColor={{ false: colors.bgRaised, true: colors.textSecondary }}
-              thumbColor={colors.textPrimary}
-            />
-          </View>
+            <ChevronRight size={16} color={colors.textMuted} />
+          </Pressable>
         </View>
 
         <TerminalShortcutSettings
@@ -412,6 +434,15 @@ export default function TerminalSettingsScreen() {
         selected={textSizeValueFromScale(textScale)}
         onSelect={selectTextSize}
         onClose={() => setTextSizePickerOpen(false)}
+      />
+
+      <PickerModal<TerminalDoubleTapActionId>
+        visible={doubleTapPickerOpen}
+        title="Double-tap in terminal"
+        options={DOUBLE_TAP_ACTION_OPTIONS}
+        selected={doubleTapAction}
+        onSelect={selectDoubleTapAction}
+        onClose={() => setDoubleTapPickerOpen(false)}
       />
     </GestureHandlerRootView>
   )

@@ -20,6 +20,12 @@ export type TerminalKeyboardAvoidanceMetrics = {
 
 export type MobileTerminalTheme = RuntimeMobileTerminalTheme
 
+export type TerminalSurfaceTap = {
+  sequence: number
+  x: number
+  y: number
+}
+
 export type TerminalSelectionEvents = {
   onSelectionMode?: (active: boolean) => void
   onSelectionCopy?: (text: string) => void
@@ -29,7 +35,7 @@ export type TerminalSelectionEvents = {
   onHaptic?: (kind: 'selection' | 'success' | 'error' | 'edge-bump') => void
   onTerminalInput?: (bytes: string) => void
   onTerminalQueryReply?: (bytes: string) => void
-  onTerminalTap?: () => void
+  onTerminalTap?: (tap: TerminalSurfaceTap) => void
   // Tap landed on a detected file path; RN resolves + opens it.
   onFileTap?: (pathText: string, line: number | null, column: number | null) => void
   // WebView-detected URL tap; RN chooses the mobile routing destination.

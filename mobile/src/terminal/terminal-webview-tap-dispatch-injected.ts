@@ -52,6 +52,7 @@ export const TERMINAL_TAP_DISPATCH_JS = `
   }
 
   document.addEventListener('touchstart', function(e) {
+    terminalSurfaceGestureSequence += 1;
     var t = e.touches[0];
     var target = e.target;
     var onHandle = target === handleStart || target === handleEnd;
@@ -102,7 +103,13 @@ export const TERMINAL_TAP_DISPATCH_JS = `
     if (inSurface) {
       dispatch.mode = 'surface';
       dispatch.touchId = t.identifier;
-      tapCandidate = { x: t.clientX, y: t.clientY, t: Date.now(), identifier: t.identifier };
+      tapCandidate = {
+        x: t.clientX,
+        y: t.clientY,
+        t: Date.now(),
+        identifier: t.identifier,
+        sequence: terminalSurfaceGestureSequence
+      };
       armLongPress(t);
     }
   }, { capture: true, passive: false });
@@ -163,7 +170,7 @@ export const TERMINAL_TAP_DISPATCH_JS = `
         selMode !== 'select' &&
         Date.now() - tapCandidate.t <= TAP_MAX_MS
       ) {
-        notifyTerminalSurfaceTap(tapCandidate.x, tapCandidate.y);
+        notifyTerminalSurfaceTap(tapCandidate.x, tapCandidate.y, tapCandidate.sequence);
       }
       clearLongPress();
       tapCandidate = null;

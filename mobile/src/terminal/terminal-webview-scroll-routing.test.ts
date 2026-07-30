@@ -212,10 +212,12 @@ describe('TerminalWebView scroll routing', () => {
       "document.addEventListener('touchend'",
       '}, { capture: true, passive: true });'
     )
-    expect(touchEndBlock).toContain('notifyTerminalSurfaceTap(tapCandidate.x, tapCandidate.y)')
+    expect(touchEndBlock).toContain(
+      'notifyTerminalSurfaceTap(tapCandidate.x, tapCandidate.y, tapCandidate.sequence)'
+    )
 
     const tapHandlerBlock = sliceBetween(
-      'function notifyTerminalSurfaceTap(originX, originY)',
+      'function notifyTerminalSurfaceTap(originX, originY, sequence)',
       "document.addEventListener('touchstart'"
     )
     expect(tapHandlerBlock.indexOf('oscLinkAtViewportPoint')).toBeLessThan(
@@ -229,7 +231,9 @@ describe('TerminalWebView scroll routing', () => {
     )
     expect(tapHandlerBlock).toContain("notify({ type: 'open-url', url: tappedUrl });")
     expect(tapHandlerBlock).toContain("notify({ type: 'terminal-input', bytes: clickInput });")
-    expect(tapHandlerBlock).toContain("notify({ type: 'terminal-tap' });")
+    expect(tapHandlerBlock).toContain(
+      "notify({ type: 'terminal-tap', sequence: sequence, x: originX, y: originY });"
+    )
   })
 
   it('allows x10 mouse gesture reports through the mobile session gate', () => {

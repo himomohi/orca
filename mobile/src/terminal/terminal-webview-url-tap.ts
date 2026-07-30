@@ -205,7 +205,7 @@ export const URL_TAP_WEBVIEW_JS = `
     } catch (e) { return 0; }
   }
 
-  function notifyTerminalSurfaceTap(originX, originY) {
+  function notifyTerminalSurfaceTap(originX, originY, sequence) {
     var tappedOscLink = oscLinkAtViewportPoint(originX, originY);
     if (tappedOscLink && tappedOscLink.kind === 'file') {
       notify({
@@ -246,7 +246,7 @@ export const URL_TAP_WEBVIEW_JS = `
     if (clickInput) {
       notify({ type: 'terminal-input', bytes: clickInput });
     } else if (!isClickMouseTrackingMode(getMouseTrackingMode())) {
-      notify({ type: 'terminal-tap' });
+      notify({ type: 'terminal-tap', sequence: sequence, x: originX, y: originY });
     }
   }
 `

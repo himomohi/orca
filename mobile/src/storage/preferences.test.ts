@@ -12,7 +12,7 @@ import {
   loadHostSidebarWidth,
   loadPushNotificationsEnabled,
   loadTerminalAutocompleteEnabled,
-  loadTerminalDoubleTapTabEnabled,
+  loadTerminalDoubleTapAction,
   loadTerminalLinkOpenMode,
   readPushNotificationsPreference,
   readDisabledTerminalLiveInputHandlesPreference,
@@ -20,7 +20,7 @@ import {
   saveHostSidebarWidth,
   savePushNotificationsEnabled,
   saveTerminalAutocompleteEnabled,
-  saveTerminalDoubleTapTabEnabled,
+  saveTerminalDoubleTapAction,
   saveTerminalLinkOpenMode
 } from './preferences'
 import {
@@ -354,27 +354,41 @@ describe('terminal autocomplete preference', () => {
   })
 })
 
-describe('terminal double-tap Tab preference', () => {
+describe('terminal double-tap action preference', () => {
   beforeEach(() => {
     vi.mocked(AsyncStorage.getItem).mockReset()
     vi.mocked(AsyncStorage.setItem).mockReset()
   })
 
-  it('defaults to disabled when unset or unreadable', async () => {
+  it('defaults to off when unset or unreadable', async () => {
     vi.mocked(AsyncStorage.getItem).mockResolvedValue(null)
-    await expect(loadTerminalDoubleTapTabEnabled()).resolves.toBe(false)
+    await expect(loadTerminalDoubleTapAction()).resolves.toBe('off')
 
     vi.mocked(AsyncStorage.getItem).mockRejectedValue(new Error('storage unavailable'))
-    await expect(loadTerminalDoubleTapTabEnabled()).resolves.toBe(false)
+    await expect(loadTerminalDoubleTapAction()).resolves.toBe('off')
   })
 
-  it('loads and persists the selected value', async () => {
-    vi.mocked(AsyncStorage.getItem).mockResolvedValue('true')
-    await expect(loadTerminalDoubleTapTabEnabled()).resolves.toBe(true)
-    expect(AsyncStorage.getItem).toHaveBeenCalledWith('orca:terminalDoubleTapTabEnabled')
+  it('loads known actions and rejects unknown values', async () => {
+    vi.mocked(AsyncStorage.getItem).mockResolvedValueOnce('ctrlC')
+    await expect(loadTerminalDoubleTapAction()).resolves.toBe('ctrlC')
 
-    await saveTerminalDoubleTapTabEnabled(true)
-    expect(AsyncStorage.setItem).toHaveBeenCalledWith('orca:terminalDoubleTapTabEnabled', 'true')
+    vi.mocked(AsyncStorage.getItem)
+      .mockResolvedValueOnce('run-command')
+      .mockResolvedValueOnce('true')
+    await expect(loadTerminalDoubleTapAction()).resolves.toBe('off')
+    expect(AsyncStorage.getItem).toHaveBeenCalledTimes(2)
+  })
+
+  it('migrates the legacy enabled preference to Tab', async () => {
+    vi.mocked(AsyncStorage.getItem).mockResolvedValueOnce(null).mockResolvedValueOnce('true')
+    await expect(loadTerminalDoubleTapAction()).resolves.toBe('tab')
+    expect(AsyncStorage.getItem).toHaveBeenNthCalledWith(1, 'orca:terminalDoubleTapAction')
+    expect(AsyncStorage.getItem).toHaveBeenNthCalledWith(2, 'orca:terminalDoubleTapTabEnabled')
+  })
+
+  it('persists the selected action', async () => {
+    await saveTerminalDoubleTapAction('escape')
+    expect(AsyncStorage.setItem).toHaveBeenCalledWith('orca:terminalDoubleTapAction', 'escape')
   })
 })
 
